@@ -122,7 +122,7 @@ void light() {
 
 int main()
 {
-  
+  led = 1;
 
   //距離センサの初期化
     for(int i = 0; i < sensorNum; i++){
@@ -143,6 +143,8 @@ int main()
           存在しないVL53L0Xをいじろうとするとたぶんそこでエラーはいてとまる
         */
     }
+    
+    led = 0;//初期化完了
   
 
   while(1)
@@ -247,6 +249,7 @@ int main()
         break;
     }
 
+
     /*test*/
     st.Next();
     //Whe.Brake();
@@ -254,6 +257,6 @@ int main()
     //Whe.North(80);
     /*test*/
 
-    UB.rise(&light);
+    UB.rise(&light); //actionNum操作
     }
 }
