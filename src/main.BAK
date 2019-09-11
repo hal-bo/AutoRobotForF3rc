@@ -1,0 +1,30 @@
+#include <mbed.h>
+#include "motor.h"
+​
+InterruptIn UB(USER_BUTTON);
+DigitalOut led(LED2, false);
+​
+PwmOut PWM_FR(PB_8);
+​
+DigitalOut PHASE_FR(PA_9);
+​
+Motor FR(PWM_FR, PHASE_FR, 100, true);
+​
+
+​
+int main()
+{
+  while(true)
+  {
+    led = 1
+    FR.Brake();
+    wait(1);
+    FR.CW(30);
+    wait(30);
+    FR.Brake();
+    led = 0;
+    wait(1);
+    FR.CCW(80);
+    wait(60);
+    }
+}
