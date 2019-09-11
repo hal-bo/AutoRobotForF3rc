@@ -13,15 +13,16 @@ private:
 
     int actionNum;
     enum Action actionTransition[10];
-    enum Requirement currentRequirement;
+    enum Requirement requirementTransition[10];
 
 public:
     /* Constructor */
     State(void);
 
     enum Action GetAction(void);
-    enum Requirement GetRequirement(void);
+    enum Requirement GetRequirement(void);//次アクションへ進む条件
     int GetActionNum(void);
+    int sideOfStage;
     void Next(void);
     void Back(void);
 };

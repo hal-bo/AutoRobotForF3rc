@@ -2,6 +2,7 @@
 #include "motor.h"
 #include "wheel.h"
 #include "state.h"
+#include "VL53L0X.h"
 
 InterruptIn UB(USER_BUTTON);
 DigitalOut led(LED2);
@@ -191,14 +192,6 @@ int main()
               st.Next();
               pc.printf("Faced!");
             }
-            break;
-          case RotateRight : //使わない
-            pc.printf("Requirement::RotateRight\r\n");
-            Whe.RotateRight(80);
-            break;
-          case RotateLeft : //使わない
-            pc.printf("Requirement::RotateLeft\r\n");
-            Whe.RotateLeft(80);
             break;
           default:
             pc.printf("Requirement::NoRequirement\r\n");
