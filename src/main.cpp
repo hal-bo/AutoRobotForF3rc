@@ -15,7 +15,7 @@ Serial pc(USBTX, USBRX);
 
 //サーボモーターピン プリント基板配列
 PwmOut SR(PB_7);
-PwmOut SL(PA_15);
+PwmOut SL(PA_2);
 
 
 //エンコーダーピン
@@ -47,7 +47,7 @@ PwmOut PWM_RL(PB_6);
 DigitalOut PHASE_FR(PC_11);
 DigitalOut PHASE_FL(PD_2);
 DigitalOut PHASE_RR(PC_9);
-DigitalOut PHASE_RL(PB_9);
+DigitalOut PHASE_RL(PA_12);
 
 
 //足回り
@@ -59,17 +59,33 @@ Wheel Whe(FR,FL,RR,RL,100);
 
 
 //距離センサ(VL53L0X * 4)
-Timer timer_vl[4];
+Timer timer_vl[6];
 I2C i2c(PB_9,PB_8);
-VL53L0X vl[4] = {VL53L0X(&i2c,&timer_vl[0]),VL53L0X(&i2c,&timer_vl[1]),VL53L0X(&i2c,&timer_vl[2]),VL53L0X(&i2c,&timer_vl[3])};
-DigitalInOut Xshut[4] = {DigitalInOut(PC_8),DigitalInOut(PB_14),DigitalInOut(PB_13),DigitalInOut(PC_5)};//FRBL
-uint16_t distance_to_object[4];
-int sensorNum = 4;
+VL53L0X vl[4] = {VL53L0X(&i2c,&timer_vl[0]),
+                 VL53L0X(&i2c,&timer_vl[1]),
+                 VL53L0X(&i2c,&timer_vl[2]),
+                 VL53L0X(&i2c,&timer_vl[3]),
+                 VL53L0X(&i2c,&timer_vl[4]),
+                 VL53L0X(&i2c,&timer_vl[5])};
+//DigitalInOut Xshut[4] = {DigitalInOut(PC_8),DigitalInOut(PB_14),DigitalInOut(PB_13),DigitalInOut(PC_5)};//universal FRBL
+//DigitalInOut Xshut[4] = {DigitalInOut(PC_8),DigitalInOut(PA_1),DigitalInOut(PC_6),DigitalInOut(PC_5)};//print FRBL
+DigitalInOut Xshut[6] = {DigitalInOut(PC_8),
+                         DigitalInOut(PA_1),
+                         DigitalInOut(PC_6),
+                         DigitalInOut(PC_5),
+                         DigitalInOut(PC_12),
+                         DigitalInOut(PC_10)};
+uint16_t distance_to_object[6];
+int sensorNum = 6;
 
 
 State st;//自動機の状態
 int num = 1;//自動機のActionNum
 bool act = false;//Go以外のAction中かどうか
+bool isOn = false;
+int DEFAULT_DISTANCE = 100;
+int DEFAULT_SPEAD = 20000;
+int receiveCount = 0;
 
 
 
@@ -81,9 +97,18 @@ bool act = false;//Go以外のAction中かどうか
 
 
 //障害確認
-bool isFaced(uint16_t distance){
-  if (distance < 100){
-    pc.printf("distance:%d",distance);
+bool isFaced(uint16_t target_distance,uint16_t faced_distance){
+  if (target_distance < faced_distance){
+    pc.printf("distance:%d",target_distance);
+    return true;
+  }else{
+    return false;
+  }
+}
+
+bool isAway(uint16_t target_distance,uint16_t faced_distance){
+  if (target_distance > faced_distance){
+    pc.printf("distance:%d",target_distance);
     return true;
   }else{
     return false;
@@ -93,18 +118,21 @@ bool isFaced(uint16_t distance){
 
 //額縁取得(サーボ)
 void ArmCatch(){
-    SR.pulsewidth_us(500);
-    SL.pulsewidth_us(500);
+    SR.pulsewidth_us(1500);//下げるとき
+    SL.pulsewidth_us(1100);
+    Whe.North(80);
     wait(3);
-    SR.pulsewidth_us(1200);
-    SL.pulsewidth_us(1200);
+    Whe.Brake();
+    wait(3);
+    SR.pulsewidth_us(1100);//上げるとき
+    SL.pulsewidth_us(1500);
     wait(3);
     act = 0; //ArmCatchモード解除
     st.Next();
 }
 
 
-//ActionNum操作
+//ActionNum操作 使わない！
 void light() {
     for(int i = 0;i < num; i++){
         pc.printf("*");
@@ -121,6 +149,9 @@ void light() {
     st.Next();
 }
 
+void changeSwitch(){
+  isOn = !isOn;
+}
 int main()
 {
   led = 1;
@@ -152,52 +183,257 @@ int main()
   {
     
     //距離取得
+    
     for(int i = 0; i < sensorNum; i++){
               distance_to_object[i] = vl[i].readRangeContinuousMillimeters();
               //pc.printf("Distance[%d]: %d\r\n",i,distance_to_object[i]);
     }
     
+    
     switch(st.GetAction()){
-      case Go :
-        pc.printf("*********Action::Go*************\r\n");
-        switch(st.GetRequirement()){
-          case DistanceFront :
-            pc.printf("Requirement::DistanceFront\r\n");
-            Whe.North(80);
-            if(isFaced(distance_to_object[0])){
-              st.Next();
-              pc.printf("Faced!");
-            }
-            break;
-          case DistanceRight :
-            pc.printf("Requirement::DistanceRight\r\n");
-            Whe.East(80);
-            if(isFaced(distance_to_object[1])){
-              st.Next();
-              pc.printf("Faced!");
-            }
-            break;
-          case DistanceBack :
-            pc.printf("Requirement::DistanceBack\r\n");
-            Whe.South(80);
-            if(isFaced(distance_to_object[2])){
-              st.Next();
-              pc.printf("Faced!");
-            }
-            break;
-          case DistanceLeft :
-            pc.printf("Requirement::DistanceLeft\r\n");
-            Whe.West(80);
-            if(isFaced(distance_to_object[3])){
-              st.Next();
-              pc.printf("Faced!");
-            }
-            break;
-          default:
-            pc.printf("Requirement::NoRequirement\r\n");
-            break;
+
+      case GoFront :
+        if(isOn){
+          Whe.Front(80);
+          switch(st.GetRequirement()){
+            case DistanceFront :
+              //pc.printf("Requirement::DistanceFront\r\n");
+
+              //test
+              pc.printf("Distance[0]: %d\r\n",distance_to_object[0]);
+              
+              if(isFaced(distance_to_object[0],DEFAULT_DISTANCE)){
+                Whe.Brake();
+                wait(0.5);
+                st.Next();
+                pc.printf("Faced!");
+              }
+              break;
+
+            case DistanceBack :
+              //pc.printf("Requirement::DistanceBack\r\n");
+              
+              //test
+              pc.printf("Distance[2]: %d\r\n",distance_to_object[2]);
+              
+              if(isAway(distance_to_object[2],DEFAULT_DISTANCE)){
+                Whe.Brake();
+                wait(0.5);
+                st.Next();
+                pc.printf("Away!");
+              }
+              break;
+            default:
+
+              break;
+          }
         }
         break;
+      
+      case GoBack :
+        if(isOn){
+          Whe.Back(80);
+          switch(st.GetRequirement()){
+            case DistanceFront :
+              //pc.printf("Requirement::DistanceFront\r\n");
+
+              //test
+              pc.printf("Distance[0]: %d\r\n",distance_to_object[0]);
+              
+              if(isAway(distance_to_object[0],DEFAULT_DISTANCE)){
+                Whe.Brake();
+                wait(0.5);
+                st.Next();
+                pc.printf("Faced!");
+              }
+              break;
+
+            case DistanceBack :
+              //pc.printf("Requirement::DistanceBack\r\n");
+              
+              //test
+              pc.printf("Distance[2]: %d\r\n",distance_to_object[2]);
+              
+              if(isFaced(distance_to_object[2],DEFAULT_DISTANCE)){
+                Whe.Brake();
+                wait(0.5);
+                st.Next();
+                pc.printf("Away!");
+              }
+              break;
+            default:
+
+              break;
+          }
+        }
+        break;
+
+      case GoRight :
+
+        if(isOn){
+          Whe.East(80);
+          switch(st.GetRequirement()){
+            case DistanceRight :
+              //pc.printf("Requirement::DistanceRight\r\n");
+
+              //test
+              pc.printf("Distance[1]: %d\r\n",distance_to_object[1]);
+              
+              if(isFaced(distance_to_object[1],DEFAULT_DISTANCE)){
+                Whe.Brake();
+                wait(0.5);
+                st.Next();
+                pc.printf("Faced!");
+              }
+              break;
+
+            case DistanceLeft :
+              //pc.printf("Requirement::DistanceLeft\r\n");
+              
+              //test
+              pc.printf("Distance[3]: %d\r\n",distance_to_object[3]);
+              
+              if(isAway(distance_to_object[3],DEFAULT_DISTANCE)){
+                Whe.Brake();
+                wait(0.5);
+                st.Next();
+                pc.printf("Away!");
+              }
+              break;
+
+            case DistanceFront :
+              //pc.printf("Requirement::DistanceFront\r\n");
+
+              //test
+              pc.printf("Distance[0]: %d\r\n",distance_to_object[0]);
+              
+              if(isFaced(distance_to_object[0],DEFAULT_DISTANCE)){
+                Whe.Brake();
+                wait(0.5);
+                st.Next();
+                pc.printf("Faced!");
+              }
+              break;
+          }
+        }
+        break;
+
+      case GoLeft :
+        if(isOn){
+          Whe.West(80);
+          switch(st.GetRequirement()){
+            case DistanceRight :
+              //pc.printf("Requirement::DistanceRight\r\n");
+
+              //test
+              pc.printf("Distance[1]: %d\r\n",distance_to_object[1]);
+              
+              if(isAway(distance_to_object[1],DEFAULT_DISTANCE)){
+                Whe.Brake();
+                wait(0.5);
+                st.Next();
+                pc.printf("Faced!");
+              }
+              break;
+
+            case DistanceLeft :
+              //pc.printf("Requirement::DistanceLeft\r\n");
+              
+              //test
+              pc.printf("Distance[3]: %d\r\n",distance_to_object[3]);
+              
+              if(isFaced(distance_to_object[3],DEFAULT_DISTANCE)){
+                Whe.Brake();
+                wait(0.5);
+                st.Next();
+                pc.printf("Away!");
+              }
+              break;
+            case DistanceFront :
+              //pc.printf("Requirement::DistanceFront\r\n");
+
+              //test
+              pc.printf("Distance[0]: %d\r\n",distance_to_object[0]);
+              
+              if(isFaced(distance_to_object[0],DEFAULT_DISTANCE)){
+                Whe.Brake();
+                wait(0.5);
+                st.Next();
+                pc.printf("Faced!");
+              }
+              break;
+          }
+        }
+        break;
+
+      
+      /*
+      case Go :
+        if(isOn){
+          //pc.printf("Action::Go\r\n");
+          switch(st.GetRequirement()){
+            case DistanceFront :
+              pc.printf("Requirement::DistanceFront\r\n");
+              Whe.North(80);
+
+              //test
+              pc.printf("Distance[0]: %d\r\n",distance_to_object[0]);
+              
+              if(isFaced(distance_to_object[0],DEFAULT_DISTANCE)){
+                Whe.Brake();
+                wait(0.5);
+                st.Next();
+                pc.printf("Faced!");
+              }
+              break;
+            case DistanceRight :
+              pc.printf("Requirement::DistanceRight\r\n");
+              Whe.East(80);
+
+              //test
+              pc.printf("Distance[1]: %d\r\n",distance_to_object[1]);
+              
+              if(isFaced(distance_to_object[1],DEFAULT_DISTANCE)){
+                Whe.Brake();
+                wait(0.5);
+                st.Next();
+                pc.printf("Faced!");
+              }
+              break;
+            case DistanceBack :
+              pc.printf("Requirement::DistanceBack\r\n");
+              Whe.South(80);
+
+              //test
+              pc.printf("Distance[2]: %d\r\n",distance_to_object[2]);
+              
+              if(isFaced(distance_to_object[2],DEFAULT_DISTANCE)){
+                Whe.Brake();
+                wait(0.5);
+                st.Next();
+                pc.printf("Faced!");
+              }
+              break;
+            case DistanceLeft :
+              pc.printf("Requirement::DistanceLeft\r\n");
+              Whe.West(80);
+              
+              //test
+              pc.printf("Distance[3]: %d\r\n",distance_to_object[3]);
+              
+              if(isFaced(distance_to_object[3],DEFAULT_DISTANCE)){
+                Whe.Brake();
+                wait(0.5);
+                st.Next();
+                pc.printf("Faced!");
+              }
+              break;
+            default:
+              pc.printf("Requirement::NoRequirement\r\n");
+              break;
+          }
+        }
+        break;*/
       case Catch :
         pc.printf("Action::Catch\r\n");
         if(!act){
@@ -210,7 +446,7 @@ int main()
         pc.printf("Action::Wait\r\n");
         Whe.Brake();
         /*test用*/
-        if(isFaced(distance_to_object[0])){
+        if(isFaced(distance_to_object[0],DEFAULT_DISTANCE)){
               st.Next();
               pc.printf("Faced!");
         }
@@ -221,16 +457,29 @@ int main()
         //***要検討***//
         if(!act){
           act = 1;
+          receiveCount = 0;
         }
-        wait(10);
-        act = 0;
-        st.Next();
+        
+        if(isFaced(distance_to_object[5],DEFAULT_DISTANCE)){3
+          receiveCount++;
+          if(receiveCount > 100){
+            act = 0;
+            receiveCount = 0;
+            st.Next();
+          }
+        }else{
+          if(receiveCount > 0){
+            receiveCount--;
+          }
+        }
+        
         break;
       case Finish :
         pc.printf("Action::Finish\r\n");
         Whe.Brake();
         SR.pulsewidth_us(1200);
         SL.pulsewidth_us(1200);
+        isOn = false;//userButton押されるの待ち
         break;
       case Stop : //使わない
         pc.printf("Action::Stop\r\n");
@@ -244,12 +493,13 @@ int main()
 
 
     /*test*/
-    st.Next();
+    //st.Next();
     //Whe.Brake();
-    wait(0.5);
+    wait(0.0166);
     //Whe.North(80);
     /*test*/
 
-    UB.rise(&light); //actionNum操作
+    UB.rise(&changeSwitch);//動かなくする or 動くようにする
+    //UB.rise(&light); //actionNum操作 使わない
     }
 }

@@ -3,8 +3,8 @@
 
 #include <mbed.h>
 
-    enum Action{Go,Catch,Wait,Receive,Finish,Stop};
-    enum Requirement{DistanceFront,DistanceRight,DistanceLeft,DistanceBack,RotateRight,RotateLeft};
+    enum Action{GoFront,GoRight,GoLeft,GoBack,Catch,Wait,Receive,Finish,Stop};
+    enum Requirement{DistanceFront,DistanceRight,DistanceLeft,DistanceBack,RotateRight,RotateLeft,NoRequirement};
 
 class State
 {
