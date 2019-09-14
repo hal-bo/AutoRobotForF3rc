@@ -75,4 +75,18 @@ void Wheel::SouthWest(uint32_t pulsewidth)
     RR.Brake();
     RL.CCW(pulsewidth);
 }
+void Wheel::RotateRight(uint32_t pulsewidth)
+{
+    FR.CW(pulsewidth);
+    FL.CW(pulsewidth);
+    RR.CW(pulsewidth);
+    RL.CW(pulsewidth);
+}
+void Wheel::RotateLeft(uint32_t pulsewidth)
+{
+    FR.CCW(pulsewidth);
+    FL.CCW(pulsewidth);
+    RR.CCW(pulsewidth);
+    RL.CCW(pulsewidth);
+}
 

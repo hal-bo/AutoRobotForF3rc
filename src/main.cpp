@@ -61,7 +61,7 @@ Wheel Whe(FR,FL,RR,RL,100);
 //距離センサ(VL53L0X * 4)
 Timer timer_vl[6];
 I2C i2c(PB_9,PB_8);
-VL53L0X vl[4] = {VL53L0X(&i2c,&timer_vl[0]),
+VL53L0X vl[6] = {VL53L0X(&i2c,&timer_vl[0]),
                  VL53L0X(&i2c,&timer_vl[1]),
                  VL53L0X(&i2c,&timer_vl[2]),
                  VL53L0X(&i2c,&timer_vl[3]),
@@ -151,6 +151,7 @@ void light() {
 
 void changeSwitch(){
   isOn = !isOn;
+  led = !led;
 }
 int main()
 {
@@ -194,7 +195,7 @@ int main()
 
       case GoFront :
         if(isOn){
-          Whe.Front(80);
+          Whe.North(DEFAULT_SPEAD);
           switch(st.GetRequirement()){
             case DistanceFront :
               //pc.printf("Requirement::DistanceFront\r\n");
@@ -232,7 +233,7 @@ int main()
       
       case GoBack :
         if(isOn){
-          Whe.Back(80);
+          Whe.South(DEFAULT_SPEAD);
           switch(st.GetRequirement()){
             case DistanceFront :
               //pc.printf("Requirement::DistanceFront\r\n");
@@ -271,7 +272,7 @@ int main()
       case GoRight :
 
         if(isOn){
-          Whe.East(80);
+          Whe.East(DEFAULT_SPEAD);
           switch(st.GetRequirement()){
             case DistanceRight :
               //pc.printf("Requirement::DistanceRight\r\n");
@@ -320,7 +321,7 @@ int main()
 
       case GoLeft :
         if(isOn){
-          Whe.West(80);
+          Whe.West(DEFAULT_SPEAD);
           switch(st.GetRequirement()){
             case DistanceRight :
               //pc.printf("Requirement::DistanceRight\r\n");
@@ -460,7 +461,7 @@ int main()
           receiveCount = 0;
         }
         
-        if(isFaced(distance_to_object[5],DEFAULT_DISTANCE)){3
+        if(isFaced(distance_to_object[5],DEFAULT_DISTANCE)){
           receiveCount++;
           if(receiveCount > 100){
             act = 0;
@@ -480,6 +481,7 @@ int main()
         SR.pulsewidth_us(1200);
         SL.pulsewidth_us(1200);
         isOn = false;//userButton押されるの待ち
+        led =  0;
         break;
       case Stop : //使わない
         pc.printf("Action::Stop\r\n");

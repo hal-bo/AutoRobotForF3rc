@@ -4,7 +4,7 @@
 #include <mbed.h>
 
     enum Action{GoFront,GoRight,GoLeft,GoBack,Catch,Wait,Receive,Finish,Stop};
-    enum Requirement{DistanceFront,DistanceRight,DistanceLeft,DistanceBack,RotateRight,RotateLeft,NoRequirement};
+    enum Requirement{DistanceFront,DistanceRight,DistanceLeft,DistanceBack,NoRequirement};
 
 class State
 {
@@ -12,8 +12,8 @@ class State
 private:
 
     int actionNum;
-    enum Action actionTransition[10];
-    enum Requirement requirementTransition[10];
+    enum Action actionTransition[12];
+    enum Requirement requirementTransition[12];
 
 public:
     /* Constructor */

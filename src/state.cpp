@@ -5,10 +5,10 @@ State::State(void)
     actionNum = 0;
     sideOfStage = 1;//1・・右ステージ、-1・・左ステージ
     //test用
-    actionTransition[0] = Go;
-    actionTransition[1] = Go;
-    actionTransition[2] = Go;
-    actionTransition[3] = Go;
+    actionTransition[0] = GoFront;
+    actionTransition[1] = GoRight;
+    actionTransition[2] = GoBack;
+    actionTransition[3] = GoLeft;
     requirementTransition[0] = DistanceFront;
     requirementTransition[1] = DistanceRight;
     requirementTransition[2] = DistanceBack;
@@ -17,24 +17,24 @@ State::State(void)
     /*本番用
     if(sideOfStage > 0){
         //右ステージ用
-        actionTransition[0]  = Go;    //North
-        actionTransition[1]  = Go;    //East
+        actionTransition[0]  = GoFront;    //North
+        actionTransition[1]  = GoRight;    //East
         actionTransition[2]  = Catch; //Catch
-        actionTransition[3]  = Go;    //South
-        actionTransition[4]  = Go;    //East
-        actionTransition[5]  = Go;    //Receive
-        actionTransition[6]  = Go;    //West
-        actionTransition[7]  = Go;    //North
-        actionTransition[8]  = Go;    //East
-        actionTransition[9]  = Go;    //North
-        actionTransition[10] = Go;    //Finish
-        actionTransition[11] = Go;    //West
+        actionTransition[3]  = GoBack;    //South
+        actionTransition[4]  = GoRight;    //East
+        actionTransition[5]  = Receive;    //Receive
+        actionTransition[6]  = GoLeft;    //West
+        actionTransition[7]  = GoFront;    //North
+        actionTransition[8]  = GoRight;    //East
+        actionTransition[9]  = GoFront;    //North
+        actionTransition[10] = Finish;    //Finish
+        actionTransition[11] = GoLeft;    //West
 
         requirementTransition[0]  = DistanceFront; //North
-        requirementTransition[1]  = DistanceRight; //East
-        requirementTransition[2]  = DistanceFront; //Catch//必要なし
+        requirementTransition[1]  = DistanceLeft; //East
+        requirementTransition[2]  = NoRequirement; //Catch//必要なし
         requirementTransition[3]  = DistanceBack;  //South
-        requirementTransition[4]  = DistanceRight; //East
+        requirementTransition[4]  = DistanceLeft; //East
         requirementTransition[5]  = DistanceRight; //Receive//必要なし
         requirementTransition[6]  = DistanceLeft;  //West
         requirementTransition[7]  = DistanceFront; //North
@@ -46,18 +46,18 @@ State::State(void)
     }else if(sideOfStage < 0){
 
         //左ステージ用
-        actionTransition[0]  = Go;    //North
-        actionTransition[1]  = Go;    //West
+        actionTransition[0]  = GoFront;    //North
+        actionTransition[1]  = GoLeft;    //West
         actionTransition[2]  = Catch; //Catch
-        actionTransition[3]  = Go;    //South
-        actionTransition[4]  = Go;    //West
-        actionTransition[5]  = Go;    //Receive
-        actionTransition[6]  = Go;    //East
-        actionTransition[7]  = Go;    //North
-        actionTransition[8]  = Go;    //West
-        actionTransition[9]  = Go;    //North
-        actionTransition[10] = Go;    //Finish
-        actionTransition[11] = Go;    //East
+        actionTransition[3]  = GoBack;    //South
+        actionTransition[4]  = GoLeft;    //West
+        actionTransition[5]  = Receive;    //Receive
+        actionTransition[6]  = GoRight;    //East
+        actionTransition[7]  = GoFront;    //North
+        actionTransition[8]  = GoLeft;    //West
+        actionTransition[9]  = GoFront;    //North
+        actionTransition[10] = Finish;    //Finish
+        actionTransition[11] = GoRight;    //East
 
         requirementTransition[0]  = DistanceFront;  //North
         requirementTransition[1]  = DistanceLeft;   //West
