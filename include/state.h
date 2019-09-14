@@ -14,6 +14,7 @@ private:
     int actionNum;
     enum Action actionTransition[12];
     enum Requirement requirementTransition[12];
+    int moveDistance[12];
 
 public:
     /* Constructor */
