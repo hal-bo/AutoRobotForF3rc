@@ -33,10 +33,10 @@ DigitalOut PHASE_RR(PC_9);
 DigitalOut PHASE_RL(PA_12);
 
 //足回り
-Motor FR(PWM_FR, PHASE_FR, 100, true);
-Motor FL(PWM_FL, PHASE_FL, 100, true);
-Motor RR(PWM_RR, PHASE_RR, 100, true);
-Motor RL(PWM_RL, PHASE_RL, 100, true);
+Motor FR(PWM_FR, PHASE_FR, 20000, true);
+Motor FL(PWM_FL, PHASE_FL, 20000, true);
+Motor RR(PWM_RR, PHASE_RR, 20000, true);
+Motor RL(PWM_RL, PHASE_RL, 20000, true);
 Wheel Whe(FR,FL,RR,RL,100);
 
 //BNOピン
@@ -56,36 +56,50 @@ void calc_position(); // 自己位置の計算
 
 State st;//自動機の状態
 int num = 1;//自動機のActionNum
-bool act = false;//Go以外のAction中かどうか
-bool isOn = false;
+bool act = 0;//Go以外のAction中かどうか
+bool isOn = true;
 int DEFAULT_DISTANCE = 400;//自動機の感知距離
 int DEFAULT_SPEED = 4000;
 int rotateSpeed = 1;
 int receiveCount = 0;
-int BORDER_OF_STRAIGHT = 6;
+int BORDER_OF_STRAIGHT = 200;
 double prepos[2] = {0,0};//x,y
 
 //額縁取得(サーボ)
 void ArmCatch(){
+  
     if(act == 0){
       SR.pulsewidth_us(1500);//下げるとき
-    SL.pulsewidth_us(1100);
+      SL.pulsewidth_us(1100);
     }
     SR.pulsewidth_us(1500);//下げるとき
     SL.pulsewidth_us(1100);
     if(isOn){
       while(act == 1){
-        if((pos[0] - prepos[0]) > st.GetMoveDistance()){
+        if((pos[1] - prepos[1]) > st.GetMoveDistance()){
             Whe.Brake();
             prepos[0] = pos[0];
             prepos[1] = pos[1];
             SR.pulsewidth_us(1100);//上げるとき
             SL.pulsewidth_us(1500);
             wait(1);
-            act = 0; //ArmCatchモード解除
-            st.Next();
+            act = 2; //ArmCatchモード解除
           }else{
             Whe.North(DEFAULT_SPEED);
+          }
+      }
+      while(act == 2){
+        if((prepos[1] - pos[1]) > st.GetMoveDistance()){
+            Whe.Brake();
+            prepos[0] = pos[0];
+            prepos[1] = pos[1];
+            SR.pulsewidth_us(1100);//上げるとき
+            SL.pulsewidth_us(1500);
+            wait(1);
+            act = 2; //ArmCatchモード解除
+            st.Next();
+          }else{
+            Whe.South(DEFAULT_SPEED);
           }
       }
     }
@@ -122,7 +136,7 @@ int main()
   bno_init();
   encoder_init();
   led = 0;//初期化完了
-  
+  isOn = true;
 
   while(1)
   {
@@ -140,46 +154,87 @@ int main()
     /*
     if(std::abs(yaw > BORDER_OF_STRAIGHT)){//角度補正
       Whe.Brake();
-      wait(3);
+      pc.printf("rotate");
+      wait(0.1);
       double speed = DEFAULT_SPEED * yaw;
       rotateSpeed = (int)speed;
       if(yaw > 0){
-        Whe.RotateLeft(rotateSpeed);
-        wait(0.5);
+        //Whe.RotateLeft(rotateSpeed);
+        //wait(0.5);
       }else if(yaw < 0){
-        Whe.RotateRight(rotateSpeed);
-        wait(0.5);
+        //Whe.RotateRight(rotateSpeed);
+        //wait(0.5);
       }
             
-    }
+    }*/
 
     //double pos[2]
     //double yaw
+    
+  while(1){
+    
+    pc.printf("front");
+    Whe.North(DEFAULT_SPEED);
+    wait(5);
+    Whe.Brake();
+    wait(0.5);
+    pc.printf("east");
+    Whe.East(DEFAULT_SPEED);
+    wait(5);
+    Whe.Brake();
+    wait(0.5);
+    pc.printf("south");
+    Whe.South(DEFAULT_SPEED);
+    wait(5);
+    Whe.Brake();
+    wait(0.5);
+    pc.printf("west");
+    Whe.West(DEFAULT_SPEED);
+    wait(5);
+    Whe.Brake();
+    wait(0.5);
+    pc.printf("rotateright");
+    Whe.RotateRight(DEFAULT_SPEED);
+    wait(5);
+    Whe.Brake();
+    wait(0.5);
+    pc.printf("rotateleft");
+    Whe.RotateLeft(DEFAULT_SPEED);
+    wait(5);
+    Whe.Brake();
+    wait(0.5);
+  }
   
-
+    isOn = true;
     switch(st.GetAction()){
 
       case GoFront :
+        pc.printf("Front\r\n");
         if(isOn){
           if((pos[1] - prepos[1]) > st.GetMoveDistance()){
+            pc.printf("Next");
             Whe.Brake();
             st.Next();
             prepos[0] = pos[0];
             prepos[1] = pos[1];
           }else{
+            pc.printf("North");
             Whe.North(DEFAULT_SPEED);
           }
         }
         break;
       
       case GoBack :
+        pc.printf("Back\r\n");
         if(isOn){
           if((prepos[1] - pos[1]) > st.GetMoveDistance()){
+            pc.printf("Next");
             Whe.Brake();
             st.Next();
             prepos[0] = pos[0];
             prepos[1] = pos[1];
           }else{
+            pc.printf("South");
             Whe.South(DEFAULT_SPEED);
           }
           
@@ -187,14 +242,17 @@ int main()
         break;
 
       case GoRight :
-
+        pc.printf("Right\r\n");
         if(isOn){
+
           if((pos[0] - prepos[0]) > st.GetMoveDistance()){
+            pc.printf("Next");
             Whe.Brake();
             st.Next();
             prepos[0] = pos[0];
             prepos[1] = pos[1];
           }else{
+            pc.printf("East");
             Whe.East(DEFAULT_SPEED);
           }
           
@@ -202,13 +260,16 @@ int main()
         break;
 
       case GoLeft :
+        pc.printf("Left\r\n");
         if(isOn){
           if((prepos[0] - pos[0]) > st.GetMoveDistance()){
+            pc.printf("Next");
             Whe.Brake();
             st.Next();
             prepos[0] = pos[0];
             prepos[1] = pos[1];
           }else{
+            pc.printf("West");
             Whe.West(DEFAULT_SPEED);
           }
           
@@ -219,7 +280,7 @@ int main()
      
       case Catch :
         pc.printf("Action::Catch\r\n");
-        if(!act){
+        if(act == 0){
           ArmCatch();
           act = 1;
         }
@@ -232,7 +293,7 @@ int main()
       case Receive :
         pc.printf("Action::Receive\r\n");
         Whe.Brake();
-        if(!act){
+        if(act == 0){
           act = 1;
           receiveCount = 0;
         }
@@ -271,7 +332,7 @@ int main()
   
     
     }
-    */
+    
     wait(0.0166);
 
     UB.rise(&changeSwitch);//動かなくする or 動くようにする
