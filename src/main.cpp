@@ -3,6 +3,7 @@
 #include "wheel.h"
 #include "state.h"
 #include "VL53L0X.h"
+#include <cstdlib>  // abs() for integer
 
 InterruptIn UB(USER_BUTTON);
 DigitalOut led(LED2);
@@ -86,6 +87,7 @@ bool isOn = false;
 int DEFAULT_DISTANCE = 100;
 int DEFAULT_SPEAD = 20000;
 int receiveCount = 0;
+int BORDER_OF_STRAIGHT = 100;
 
 
 
@@ -195,8 +197,40 @@ int main()
 
       case GoFront :
         if(isOn){
-          Whe.North(DEFAULT_SPEAD);
+          if(distance_to_object[1] < distance_to_object[3]){//右に近いなら
+              int gap = distance_to_object[1] - distance_to_object[4];//前方-後方
+              if(std::abs(gap)>BORDER_OF_STRAIGHT){
+                Whe.Brake();
+                wait(3);
+                if(gap > 0){
+                  Whe.RotateRight(DEFAULT_SPEAD);
+                  wait(3);
+                }else if(gap < 0){
+                  Whe.RotateLeft(DEFAULT_SPEAD);
+                  wait(3);
+                }
+              }else{
+                Whe.North(DEFAULT_SPEAD);
+              }
+          }else if(distance_to_object[1] > distance_to_object[3]){//左に近いなら
+              int gap = distance_to_object[3] - distance_to_object[5];//前方-後方
+              if(std::abs(gap)>BORDER_OF_STRAIGHT){
+                Whe.Brake();
+                wait(3);
+                if(gap > 0){
+                  Whe.RotateRight(DEFAULT_SPEAD);
+                  wait(3);
+                }else if(gap < 0){
+                  Whe.RotateLeft(DEFAULT_SPEAD);
+                  wait(3);
+                }
+              }else{
+                Whe.North(DEFAULT_SPEAD);
+              }
+            }
+          
           switch(st.GetRequirement()){
+            
             case DistanceFront :
               //pc.printf("Requirement::DistanceFront\r\n");
 
@@ -233,7 +267,37 @@ int main()
       
       case GoBack :
         if(isOn){
-          Whe.South(DEFAULT_SPEAD);
+          if(distance_to_object[1] < distance_to_object[3]){//右に近いなら
+              int gap = distance_to_object[1] - distance_to_object[4];//前方-後方
+              if(std::abs(gap)>BORDER_OF_STRAIGHT){
+                Whe.Brake();
+                wait(3);
+                if(gap > 0){
+                  Whe.RotateRight(DEFAULT_SPEAD);
+                  wait(3);
+                }else if(gap < 0){
+                  Whe.RotateLeft(DEFAULT_SPEAD);
+                  wait(3);
+                }
+              }else{
+                Whe.South(DEFAULT_SPEAD);
+              }
+          }else if(distance_to_object[1] > distance_to_object[3]){//左に近いなら
+              int gap = distance_to_object[3] - distance_to_object[5];//前方-後方
+              if(std::abs(gap)>BORDER_OF_STRAIGHT){
+                Whe.Brake();
+                wait(3);
+                if(gap > 0){
+                  Whe.RotateLeft(DEFAULT_SPEAD);
+                  wait(3);
+                }else if(gap < 0){
+                  Whe.RotateRight(DEFAULT_SPEAD);
+                  wait(3);
+                }
+              }else{
+                Whe.South(DEFAULT_SPEAD);
+              }
+            }
           switch(st.GetRequirement()){
             case DistanceFront :
               //pc.printf("Requirement::DistanceFront\r\n");
