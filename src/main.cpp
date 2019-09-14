@@ -8,14 +8,11 @@
 
 InterruptIn UB(USER_BUTTON);
 DigitalOut led(LED2);
-Serial pc(USBTX, USBRX); 
+Serial pc(USBTX, USBRX,115200); 
 
 //サーボモーターピン プリント基板配列
 PwmOut SR(PB_7);
-PwmOut SL(PA_2);
-
-//BNOピン
-BNO055 bno(PB_9, PB_8); 
+PwmOut SL(PB_3);
 
 //エンコーダーピン
 /*
@@ -35,7 +32,6 @@ DigitalOut PHASE_FL(PD_2);
 DigitalOut PHASE_RR(PC_9);
 DigitalOut PHASE_RL(PA_12);
 
-
 //足回り
 Motor FR(PWM_FR, PHASE_FR, 100, true);
 Motor FL(PWM_FL, PHASE_FL, 100, true);
@@ -43,8 +39,10 @@ Motor RR(PWM_RR, PHASE_RR, 100, true);
 Motor RL(PWM_RL, PHASE_RL, 100, true);
 Wheel Whe(FR,FL,RR,RL,100);
 
+//BNOピン
+BNO055 bno(PB_9, PB_8); 
 
-//距離センサ(VL53L0X * 4)
+//距離センサ
 Timer timer;
 I2C i2c(PB_9,PB_8);
 VL53L0X vlR = VL53L0X(&i2c,&timer);
@@ -61,7 +59,7 @@ int num = 1;//自動機のActionNum
 bool act = false;//Go以外のAction中かどうか
 bool isOn = false;
 int DEFAULT_DISTANCE = 400;//自動機の感知距離
-int DEFAULT_SPEED = 10000;
+int DEFAULT_SPEED = 4000;
 int rotateSpeed = 1;
 int receiveCount = 0;
 int BORDER_OF_STRAIGHT = 6;
@@ -69,22 +67,27 @@ double prepos[2] = {0,0};//x,y
 
 //額縁取得(サーボ)
 void ArmCatch(){
+    if(act == 0){
+      SR.pulsewidth_us(1500);//下げるとき
+    SL.pulsewidth_us(1100);
+    }
     SR.pulsewidth_us(1500);//下げるとき
     SL.pulsewidth_us(1100);
     if(isOn){
-          if((pos[0] - prepos[0]) > st.GetMoveDistance()){
+      while(act == 1){
+        if((pos[0] - prepos[0]) > st.GetMoveDistance()){
             Whe.Brake();
             prepos[0] = pos[0];
             prepos[1] = pos[1];
             SR.pulsewidth_us(1100);//上げるとき
             SL.pulsewidth_us(1500);
-            wait(3);
+            wait(1);
             act = 0; //ArmCatchモード解除
             st.Next();
           }else{
             Whe.North(DEFAULT_SPEED);
           }
-          
+      }
     }
 }
 
@@ -127,13 +130,14 @@ int main()
     //距離取得
     distance_to_object = vlR.readRangeContinuousMillimeters();
     pc.printf("Distance: %d\r\n",distance_to_object);
-    
+    pc.printf("x : %.1f,y:%.1f  ",pos[0],pos[1]);
+    pc.printf("rotation : %.1f  ",yaw);
     //bno.get_angles();
     //pc.printf("[roll,pitch,yaw] = [%.2f  %.2f  %.2f]\r\n", bno.euler.roll, bno.euler.pitch, bno.euler.yaw);
     
     // 自己位置の計算
     calc_position();
-    
+    /*
     if(std::abs(yaw > BORDER_OF_STRAIGHT)){//角度補正
       Whe.Brake();
       wait(3);
@@ -141,10 +145,10 @@ int main()
       rotateSpeed = (int)speed;
       if(yaw > 0){
         Whe.RotateLeft(rotateSpeed);
-        wait(3);
+        wait(0.5);
       }else if(yaw < 0){
         Whe.RotateRight(rotateSpeed);
-        wait(3);
+        wait(0.5);
       }
             
     }
@@ -224,12 +228,10 @@ int main()
       case Wait :
         pc.printf("Action::Wait\r\n");
         Whe.Brake();
-        /*test用*/
         break;
       case Receive :
         pc.printf("Action::Receive\r\n");
         Whe.Brake();
-        //***要検討***//
         if(!act){
           act = 1;
           receiveCount = 0;
@@ -266,8 +268,10 @@ int main()
       default:
         pc.printf("Action::NoAction\r\n");
         break;
+  
+    
     }
-
+    */
     wait(0.0166);
 
     UB.rise(&changeSwitch);//動かなくする or 動くようにする

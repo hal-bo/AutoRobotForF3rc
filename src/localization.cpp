@@ -7,8 +7,8 @@
 #define EN_YA PA_9
 #define EN_YB PB_4
 
-#define WHEEL_RADIUS 30.0 //[mm]
-double en_distance[2]={10.0,10.0};
+#define WHEEL_RADIUS 20.5 //[mm]
+double en_distance[2]={-99.35,118.87};
 
 #define PI 3.141592
 
@@ -17,9 +17,9 @@ extern DigitalOut led;
 extern Serial pc;
 
 // global
-double pos[2] = {0,0};
-double yaw = 0;
-double oldyaw = 0;
+double pos[2] = {0.0,0.0};
+double yaw = 0.0;
+double oldyaw = 0.0;
 
 int nowcount[2] = {0,0};
 int oldcount[2]={0,0};
@@ -37,17 +37,21 @@ InterruptIn switchevent_x(EN_XA);
 InterruptIn switchevent_y(EN_YA);
 
 void enx_rise(){
-    if(encoder_x[0]==1)
+    if(encoder_x[1]==0){
         nowcount[0]++;
-    else
+    }
+    else{
         nowcount[0]--;
+    }
 }
 
 void eny_rise(){
-    if(encoder_y[0]==1)
+    if(encoder_y[1]==1){
         nowcount[1]++;
-    else
+    }
+    else{
         nowcount[1]--;
+    }
 }
 
 // initialize encoder
@@ -78,10 +82,17 @@ void bno_init(){
 
 void readbno(){
     bno.get_angles();
-    if(yaw<bno.euler.yaw-180)
+    if(yaw<bno.euler.yaw-180){
+        yaw=bno.euler.yaw-360;
+    }
+    else if(yaw>bno.euler.yaw+180){
         yaw=bno.euler.yaw+360;
-    if(yaw>bno.euler.yaw+180)
-        yaw=bno.euler.yaw+360;
+    }
+    else{
+        yaw=bno.euler.yaw;
+    }
+    
+    
 }
 
 void calc_position(){
@@ -90,8 +101,8 @@ void calc_position(){
         pos_delta[i]=(double)(nowcount[i]-oldcount[i])*2*PI/360*WHEEL_RADIUS;
     }
     // trans coordinate(robot_center)
-    pos_delta[0]+=en_distance[0]*(yaw-oldyaw)*PI/180;
-    pos_delta[1]-=en_distance[1]*(yaw-oldyaw)*PI/180;
+    //pos_delta[0]-=en_distance[0]*(yaw-oldyaw)*PI/180;
+    //pos_delta[1]+=en_distance[1]*(yaw-oldyaw)*PI/180;
 
     pos[0]+=(pos_delta[0]*cos(yaw*PI/180)+pos_delta[1]*sin(yaw*PI/180));
     pos[1]+=(-pos_delta[0]*sin(yaw*PI/180)+pos_delta[1]*cos(yaw*PI/180));
@@ -101,4 +112,5 @@ void calc_position(){
         oldcount[i]=nowcount[i];
     }
     oldyaw = yaw;
+    pc.printf("count= %d %d ",nowcount[0],nowcount[1]);
 }
