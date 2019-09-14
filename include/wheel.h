@@ -29,6 +29,8 @@ public:
     void NorthWest(uint32_t PulseWidth);
     void SouthEast(uint32_t PulseWidth);
     void SouthWest(uint32_t PulseWidth);
+    void RotateRight(uint32_t PulseWidth);
+    void RotateLeft(uint32_t PulseWidth);
 
 };
 

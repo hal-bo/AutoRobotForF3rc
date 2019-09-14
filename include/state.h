@@ -22,6 +22,7 @@ public:
 
     enum Action GetAction(void);
     enum Requirement GetRequirement(void);//次アクションへ進む条件
+    int GetMoveDistance(void);
     int GetActionNum(void);
     int sideOfStage;
     void Next(void);

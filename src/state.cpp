@@ -26,6 +26,7 @@ State::State(void)
     moveDistance[9]  = 795; //North
     moveDistance[10] = 0; //Finish//必要なし
     moveDistance[11] = 1490;  //West
+    moveDistance[12] = 0;
 
     /*本番用
     if(sideOfStage > 0){
@@ -42,21 +43,7 @@ State::State(void)
         actionTransition[9]  = GoFront;    //North
         actionTransition[10] = Finish;    //Finish
         actionTransition[11] = GoLeft;    //West
-
-        requirementTransition[0]  = DistanceFront; //North
-        requirementTransition[1]  = DistanceLeft; //East
-        requirementTransition[2]  = NoRequirement; //Catch//必要なし
-        requirementTransition[3]  = DistanceBack;  //South
-        requirementTransition[4]  = DistanceLeft; //East
-        requirementTransition[5]  = DistanceRight; //Receive//必要なし
-        requirementTransition[6]  = DistanceLeft;  //West
-        requirementTransition[7]  = DistanceFront; //North
-        requirementTransition[8]  = DistanceRight; //East
-        requirementTransition[9]  = DistanceFront; //North
-        requirementTransition[10] = Norequirement; //Finish//必要なし
-        requirementTransition[11] = DistanceLeft;  //West
-
-    
+        actionTransition[12] = Stop;   //End
 
     }else if(sideOfStage < 0){
 
@@ -73,19 +60,8 @@ State::State(void)
         actionTransition[9]  = GoFront;    //North
         actionTransition[10] = Finish;    //Finish
         actionTransition[11] = GoRight;    //East
+        actionTransition[12] = Stop;   //End
 
-        requirementTransition[0]  = DistanceFront;  //North
-        requirementTransition[1]  = DistanceLeft;   //West
-        requirementTransition[2]  = Norequirement;  //Catch//必要なし
-        requirementTransition[3]  = DistanceBack;   //South
-        requirementTransition[4]  = DistanceLeft;   //West
-        requirementTransition[5]  = DistanceLeft;   //Receive
-        requirementTransition[6]  = DistanceRight;  //East
-        requirementTransition[7]  = DistanceFront;  //North
-        requirementTransition[8]  = DistanceLeft;   //West
-        requirementTransition[9]  = DistanceFront;  //North
-        requirementTransition[10] = Norequirement; //Finish//必要なし
-        requirementTransition[11] = DistanceLeft;  //East
     }
     
     */

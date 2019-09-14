@@ -1,4 +1,6 @@
 // localization.cpp
+#include <mbed.h>
+#include <BNO055.h>
 
 #define EN_XA PA_7
 #define EN_XB PC_7
@@ -19,7 +21,7 @@ double pos[2] = {0,0};
 double yaw = 0;
 double oldyaw = 0;
 
-int count[2] = {0,0};
+int nowcount[2] = {0,0};
 int oldcount[2]={0,0};
 double pos_delta[2]={0,0};
 
@@ -32,20 +34,20 @@ DigitalIn encoder_y[2]={DigitalIn(EN_YA),DigitalIn(EN_YB)};
 
 // A rise
 InterruptIn switchevent_x(EN_XA);
-InterruptIn switchevent_x(EN_YA);
+InterruptIn switchevent_y(EN_YA);
 
 void enx_rise(){
-    if(encoder_x==1)
-        count[0]++;
+    if(encoder_x[0]==1)
+        nowcount[0]++;
     else
-        count[0]--;
+        nowcount[0]--;
 }
 
 void eny_rise(){
-    if(encoder_y==1)
-        count[1]++;
+    if(encoder_y[0]==1)
+        nowcount[1]++;
     else
-        count[1]--;
+        nowcount[1]--;
 }
 
 // initialize encoder
@@ -75,7 +77,7 @@ void bno_init(){
 }
 
 void readbno(){
-    bno_get_angles();
+    bno.get_angles();
     if(yaw<bno.euler.yaw-180)
         yaw=bno.euler.yaw+360;
     if(yaw>bno.euler.yaw+180)
@@ -85,7 +87,7 @@ void readbno(){
 void calc_position(){
     readbno();
     for(int i=0;i<2;i++){
-        pos_delta[i]=(double)(count[i]-oldcount[i])*2*PI/360*WHEEL_RADIUS;
+        pos_delta[i]=(double)(nowcount[i]-oldcount[i])*2*PI/360*WHEEL_RADIUS;
     }
     // trans coordinate(robot_center)
     pos_delta[0]+=en_distance[0]*(yaw-oldyaw)*PI/180;
@@ -96,7 +98,7 @@ void calc_position(){
     
     // trans coordinate(field)
     for(int i=0;i<2;i++){
-        oldcount[i]=count[i];
+        oldcount[i]=nowcount[i];
     }
     oldyaw = yaw;
 }
