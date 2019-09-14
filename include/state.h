@@ -13,14 +13,14 @@ private:
 
     int actionNum;
     enum Action actionTransition[12];
-    int moveDistance[12];
+    int rotateDirection[12];
 
 public:
     /* Constructor */
     State(void);
 
     enum Action GetAction(void);
-    int GetMoveDistance(void);
+    int GetRotateDirection(void);
     int GetActionNum(void);
     int sideOfStage;
     void Next(void);

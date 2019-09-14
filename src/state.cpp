@@ -6,28 +6,14 @@ State::State(void)
     sideOfStage = 1;//1・・右ステージ、-1・・左ステージ
     //test用
     actionTransition[0] = GoFront;
-    actionTransition[1] = GoLeft;
-    actionTransition[2] = GoBack;
-    actionTransition[3] = GoRight;
-    moveDistance[0]  = 100; //North
-    moveDistance[1]  = 110; //East
-    moveDistance[2]  = 100; //Catch//必要なし
-    moveDistance[3]  = 110;  //South
-/*
-    moveDistance[0]  = 3430; //North
-    moveDistance[1]  = 117; //East
-    moveDistance[2]  = 82; //Catch//必要なし
-    moveDistance[3]  = 3430;  //South
-    moveDistance[4]  = 953; //East
-    moveDistance[5]  = 0; //Receive//必要なし
-    moveDistance[6]  = 953;  //West
-    moveDistance[7]  = 3430; //North
-    moveDistance[8]  = 1495; //East
-    moveDistance[9]  = 795; //North
-    moveDistance[10] = 0; //Finish//必要なし
-    moveDistance[11] = 1490;  //West
-    moveDistance[12] = 0;
-*/
+    actionTransition[1] = GoFront;
+    actionTransition[2] = GoFront;
+    actionTransition[3] = GoFront;
+    rotateDirection[0]  = 90; //North
+    rotateDirection[1]  = 90; //East
+    rotateDirection[2]  = 90; //Catch//必要なし
+    rotateDirection[3]  = 90;  //South
+
     /*本番用
     if(sideOfStage > 0){
         //右ステージ用
@@ -72,8 +58,8 @@ enum Action State::GetAction(void){
 }
 
 
-int State::GetMoveDistance(void){
-    return moveDistance[actionNum];
+int State::GetRotateDirection(void){
+    return rotateDirection[actionNum];
 }
 
 int State::GetActionNum(void) 

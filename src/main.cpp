@@ -43,10 +43,11 @@ Wheel Whe(FR,FL,RR,RL,100);
 BNO055 bno(PB_9, PB_8); 
 
 //距離センサ
-Timer timer;
+Timer timer_vl[2];
 I2C i2c(PB_9,PB_8);
-VL53L0X vlR = VL53L0X(&i2c,&timer);
-uint16_t distance_to_object;
+VL53L0X vl[2] = {VL53L0X(&i2c,&timer_vl[0]),VL53L0X(&i2c,&timer_vl[1])};
+DigitalInOut Xshut[2] = {DigitalInOut(PC_8),DigitalInOut(PC_5)};
+uint16_t distance_to_object[2];
 
 extern double pos[2];
 extern double yaw;
@@ -56,14 +57,16 @@ void calc_position(); // 自己位置の計算
 
 State st;//自動機の状態
 int num = 1;//自動機のActionNum
-bool act = 0;//Go以外のAction中かどうか
+int act = 0;//Go以外のAction中かどうか
 bool isOn = true;
-int DEFAULT_DISTANCE = 400;//自動機の感知距離
+int DEFAULT_DISTANCE = 300;//自動機の感知距離
 int DEFAULT_SPEED = 4000;
 int rotateSpeed = 1;
 int receiveCount = 0;
 int BORDER_OF_STRAIGHT = 200;
 double prepos[2] = {0,0};//x,y
+double rz;
+double rotateTime = 3.9;
 
 //額縁取得(サーボ)
 void ArmCatch(){
@@ -76,31 +79,10 @@ void ArmCatch(){
     SL.pulsewidth_us(1100);
     if(isOn){
       while(act == 1){
-        if((pos[1] - prepos[1]) > st.GetMoveDistance()){
-            Whe.Brake();
-            prepos[0] = pos[0];
-            prepos[1] = pos[1];
-            SR.pulsewidth_us(1100);//上げるとき
-            SL.pulsewidth_us(1500);
-            wait(1);
-            act = 2; //ArmCatchモード解除
-          }else{
-            Whe.North(DEFAULT_SPEED);
-          }
+        
       }
       while(act == 2){
-        if((prepos[1] - pos[1]) > st.GetMoveDistance()){
-            Whe.Brake();
-            prepos[0] = pos[0];
-            prepos[1] = pos[1];
-            SR.pulsewidth_us(1100);//上げるとき
-            SL.pulsewidth_us(1500);
-            wait(1);
-            act = 2; //ArmCatchモード解除
-            st.Next();
-          }else{
-            Whe.South(DEFAULT_SPEED);
-          }
+        
       }
     }
 }
@@ -110,7 +92,7 @@ void changeSwitch(){
   led = !led;
   bno_init();
 }
-bool isFaced(uint16_t target_distance,uint16_t faced_distance){
+bool isFaced(int target_distance,int faced_distance){
   if (target_distance < faced_distance){
     pc.printf("distance:%d",target_distance);
     return true;
@@ -121,20 +103,32 @@ bool isFaced(uint16_t target_distance,uint16_t faced_distance){
 int main()
 {
   led = 1;
-
+pc.printf("start");
   //距離センサの初期化
-  wait(0.5);
-  pc.printf("start");
-  vlR.init();//初期化
-  wait(0.15);
-  vlR.startContinuous(30);
-  /*VL53L0Xの使用個数に応じてループの回数を変更すること
-  存在しないVL53L0Xをいじろうとするとたぶんそこでエラーはいてとまる
-  */
+  for(int i = 0; i < 2; i++){
+        Xshut[i].output();
+        Xshut[i] = 0;
+    }
+    pc.printf("a");
+    wait(0.5);
+    /*Xshutピンを０VにするとVL53L0Xをシャットダウンできる*/
+    for(int i = 0; i < 2; i++){
+        pc.printf("b");
+        Xshut[i].input();//Xshutピンに接続されたGPIOピンをインプットにするとVL53L0Xが起動
+        wait(0.15);
+        vl[i].init();//初期化
+        wait(0.15);
+        vl[i].setAddress((uint8_t) 44+i*2);//アドレスをデフォルトから変更しないと複数のVL53L0Xを使えない
+        wait(0.15);
+        vl[i].startContinuous(30);
+        /*VL53L0Xの使用個数に応じてループの回数を変更すること
+        存在しないVL53L0Xをいじろうとするとたぶんそこでエラーはいてとまる
+        */
+    }
     
 
   bno_init();
-  encoder_init();
+  //encoder_init();
   led = 0;//初期化完了
   isOn = true;
 
@@ -142,12 +136,13 @@ int main()
   {
     
     //距離取得
-    distance_to_object = vlR.readRangeContinuousMillimeters();
-    pc.printf("Distance: %d\r\n",distance_to_object);
-    pc.printf("x : %.1f,y:%.1f  ",pos[0],pos[1]);
+    for(int i = 0; i < 2; i++){
+      distance_to_object[i] = vl[i].readRangeContinuousMillimeters();
+      pc.printf("Distance%d: %d\r\n",i,distance_to_object[i]);
+    }
     pc.printf("rotation : %.1f  ",yaw);
-    //bno.get_angles();
-    //pc.printf("[roll,pitch,yaw] = [%.2f  %.2f  %.2f]\r\n", bno.euler.roll, bno.euler.pitch, bno.euler.yaw);
+    bno.get_angles();
+    pc.printf("[roll,pitch,yaw] = [%.2f  %.2f  %.2f]\r\n", bno.euler.roll, bno.euler.pitch, bno.euler.yaw);
     
     // 自己位置の計算
     calc_position();
@@ -167,43 +162,6 @@ int main()
       }
             
     }*/
-
-    //double pos[2]
-    //double yaw
-    
-  while(1){
-    
-    pc.printf("front");
-    Whe.North(DEFAULT_SPEED);
-    wait(5);
-    Whe.Brake();
-    wait(0.5);
-    pc.printf("east");
-    Whe.East(DEFAULT_SPEED);
-    wait(5);
-    Whe.Brake();
-    wait(0.5);
-    pc.printf("south");
-    Whe.South(DEFAULT_SPEED);
-    wait(5);
-    Whe.Brake();
-    wait(0.5);
-    pc.printf("west");
-    Whe.West(DEFAULT_SPEED);
-    wait(5);
-    Whe.Brake();
-    wait(0.5);
-    pc.printf("rotateright");
-    Whe.RotateRight(DEFAULT_SPEED);
-    wait(5);
-    Whe.Brake();
-    wait(0.5);
-    pc.printf("rotateleft");
-    Whe.RotateLeft(DEFAULT_SPEED);
-    wait(5);
-    Whe.Brake();
-    wait(0.5);
-  }
   
     isOn = true;
     switch(st.GetAction()){
@@ -211,73 +169,22 @@ int main()
       case GoFront :
         pc.printf("Front\r\n");
         if(isOn){
-          if((pos[1] - prepos[1]) > st.GetMoveDistance()){
-            pc.printf("Next");
-            Whe.Brake();
-            st.Next();
-            prepos[0] = pos[0];
-            prepos[1] = pos[1];
+          if(isFaced((int)distance_to_object[0],DEFAULT_DISTANCE)){
+            if(st.GetRotateDirection() == 90){
+              //current_yaw = bno.euler.yaw;
+              pc.printf("rotateRight");
+              Whe.RotateRight(DEFAULT_SPEED);
+              wait(rotateTime);
+              Whe.Brake();
+              st.Next();
+            }
           }else{
-            pc.printf("North");
             Whe.North(DEFAULT_SPEED);
           }
         }
         break;
       
-      case GoBack :
-        pc.printf("Back\r\n");
-        if(isOn){
-          if((prepos[1] - pos[1]) > st.GetMoveDistance()){
-            pc.printf("Next");
-            Whe.Brake();
-            st.Next();
-            prepos[0] = pos[0];
-            prepos[1] = pos[1];
-          }else{
-            pc.printf("South");
-            Whe.South(DEFAULT_SPEED);
-          }
-          
-        }
-        break;
-
-      case GoRight :
-        pc.printf("Right\r\n");
-        if(isOn){
-
-          if((pos[0] - prepos[0]) > st.GetMoveDistance()){
-            pc.printf("Next");
-            Whe.Brake();
-            st.Next();
-            prepos[0] = pos[0];
-            prepos[1] = pos[1];
-          }else{
-            pc.printf("East");
-            Whe.East(DEFAULT_SPEED);
-          }
-          
-        }
-        break;
-
-      case GoLeft :
-        pc.printf("Left\r\n");
-        if(isOn){
-          if((prepos[0] - pos[0]) > st.GetMoveDistance()){
-            pc.printf("Next");
-            Whe.Brake();
-            st.Next();
-            prepos[0] = pos[0];
-            prepos[1] = pos[1];
-          }else{
-            pc.printf("West");
-            Whe.West(DEFAULT_SPEED);
-          }
-          
-        }
-        break;
-
       
-     
       case Catch :
         pc.printf("Action::Catch\r\n");
         if(act == 0){
@@ -298,7 +205,7 @@ int main()
           receiveCount = 0;
         }
         
-        if(isFaced(distance_to_object,DEFAULT_DISTANCE)){
+        if(isFaced((int)distance_to_object,DEFAULT_DISTANCE)){
           receiveCount++;
           if(receiveCount > 100){
             act = 0;
