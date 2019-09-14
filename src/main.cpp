@@ -18,6 +18,8 @@ Serial pc(USBTX, USBRX);
 PwmOut SR(PB_7);
 PwmOut SL(PA_2);
 
+//BNOピン
+BNO055 bno(PB_9, PB_8); 
 
 //エンコーダーピン
 /*
@@ -178,7 +180,13 @@ int main()
           存在しないVL53L0Xをいじろうとするとたぶんそこでエラーはいてとまる
         */
     }
-    
+    if (!bno.check()){
+      pc.printf("!!BNO_ERROR!!\n");
+    }else{
+       pc.printf("BNO_CONNECTED\n");
+    }
+    bno.reset();
+	  bno.setmode(OPERATION_MODE_IMUPLUS);
     led = 0;//初期化完了
   
 
@@ -191,7 +199,8 @@ int main()
               distance_to_object[i] = vl[i].readRangeContinuousMillimeters();
               //pc.printf("Distance[%d]: %d\r\n",i,distance_to_object[i]);
     }
-    
+    bno.get_angles();
+    pc.printf("[roll,pitch,yaw] = [%.2f  %.2f  %.2f]\r\n", bno.euler.roll, bno.euler.pitch, bno.euler.yaw);
     
     switch(st.GetAction()){
 
