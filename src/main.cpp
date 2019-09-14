@@ -62,25 +62,20 @@ Wheel Whe(FR,FL,RR,RL,100);
 
 
 //距離センサ(VL53L0X * 4)
-Timer timer_vl[6];
+Timer timer;
 I2C i2c(PB_9,PB_8);
-VL53L0X vl[6] = {VL53L0X(&i2c,&timer_vl[0]),
-                 VL53L0X(&i2c,&timer_vl[1]),
-                 VL53L0X(&i2c,&timer_vl[2]),
-                 VL53L0X(&i2c,&timer_vl[3]),
-                 VL53L0X(&i2c,&timer_vl[4]),
-                 VL53L0X(&i2c,&timer_vl[5])};
+VL53L0X vlx = VL53L0X(&i2c,&timer);
 //DigitalInOut Xshut[4] = {DigitalInOut(PC_8),DigitalInOut(PB_14),DigitalInOut(PB_13),DigitalInOut(PC_5)};//universal FRBL
 //DigitalInOut Xshut[4] = {DigitalInOut(PC_8),DigitalInOut(PA_1),DigitalInOut(PC_6),DigitalInOut(PC_5)};//print FRBL
-DigitalInOut Xshut[6] = {DigitalInOut(PC_8),
-                         DigitalInOut(PA_1),
-                         DigitalInOut(PC_6),
-                         DigitalInOut(PC_5),
-                         DigitalInOut(PC_12),
-                         DigitalInOut(PC_10)};
-uint16_t distance_to_object[6];
+DigitalInOut(PC_8);
+uint16_t distance_to_object;
 int sensorNum = 6;
 
+extern double pos[2];
+extern double yaw;
+void encoder_init();  // エンコーダの初期化
+void bno_init();      // BNOの初期化
+void calc_position(); // 自己位置の計算
 
 State st;//自動機の状態
 int num = 1;//自動機のActionNum
@@ -191,6 +186,7 @@ int main()
     }
 
     bno_init();
+    encoder_init();
     led = 0;//初期化完了
   
 
@@ -206,6 +202,8 @@ int main()
     //bno.get_angles();
     //pc.printf("[roll,pitch,yaw] = [%.2f  %.2f  %.2f]\r\n", bno.euler.roll, bno.euler.pitch, bno.euler.yaw);
     
+    // 自己位置の計算
+    calc_position();
     
     if(std::abs(yaw > BORDER_OF_STRAIGHT)){//角度補正
       Brake();
